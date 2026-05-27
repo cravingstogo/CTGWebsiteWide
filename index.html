@@ -390,14 +390,17 @@ a, button, [onclick], .menu-toggle, .order-btn, .hero-cta, .hero-cta-secondary,
   50%       { opacity: 1;    transform: translate(0, -50%) scale(1.18); }
 }
 
-/* ── Perspective tilt wrapper ── */
+/* ── Tilt wrapper — uses translate (NOT rotate) to avoid WebGL rasterization loss ── */
 .spline-tilt {
-  width: 100%;
-  height: 100%;
+  width: 110%;       /* slightly oversize so edge-fade never clips into empty space */
+  height: 110%;
+  margin: -5%;       /* re-center */
   position: relative;
-  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--sp-scale, 1));
-  transform-style: preserve-3d;
+  transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(var(--sp-scale, 1));
   will-change: transform;
+  /* Vignette mask: fades the scene's own background colour into the dark hero */
+  -webkit-mask-image: radial-gradient(ellipse 82% 80% at 58% 50%, black 35%, rgba(0,0,0,0.6) 60%, transparent 100%);
+          mask-image: radial-gradient(ellipse 82% 80% at 58% 50%, black 35%, rgba(0,0,0,0.6) 60%, transparent 100%);
 }
 
 spline-viewer {
@@ -406,7 +409,6 @@ spline-viewer {
   display: block;
   opacity: 0;
   transition: opacity 1.4s ease;
-  transform-style: preserve-3d;
 }
 spline-viewer::part(canvas) {
   position: absolute !important;
@@ -1282,6 +1284,32 @@ footer .footer-brand {
 }
 
 /* ════════════════════════════════
+   TABLET (769px – 1100px)
+════════════════════════════════ */
+@media (min-width: 769px) and (max-width: 1100px) {
+  /* Stronger left-side overlay so text is always readable */
+  .spline-overlay {
+    background: linear-gradient(to right,
+      rgba(26,10,15,1)    0%,
+      rgba(26,10,15,0.95) 35%,
+      rgba(26,10,15,0.5)  62%,
+      transparent         85%
+    );
+  }
+  /* Tighter vignette on tablet to hide scene background bleed */
+  .spline-tilt {
+    -webkit-mask-image: radial-gradient(ellipse 75% 72% at 58% 50%, black 28%, rgba(0,0,0,0.5) 55%, transparent 100%);
+            mask-image: radial-gradient(ellipse 75% 72% at 58% 50%, black 28%, rgba(0,0,0,0.5) 55%, transparent 100%);
+  }
+  /* Push model further right so it doesn't crowd the text */
+  .spline-container { padding-left: 50vw; }
+  /* Smaller glow on tablet */
+  .spline-glow { width: 380px; height: 380px; right: 2%; filter: blur(36px); }
+  /* Hint stays within view */
+  .spline-hint { right: 6%; bottom: 28px; }
+}
+
+/* ════════════════════════════════
    REDUCED MOTION
 ════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
@@ -1790,12 +1818,12 @@ function dismissHint() {
   setTimeout(() => splineHint.style.display = 'none', 800);
 }
 
-/* ── 3D Tilt + Spotlight — mouse tracking with lerp ── */
-const MAX_TILT  = 7;     // degrees
-const LERP_SPD  = 0.07;  // smoothing (lower = smoother/slower)
+/* ── Parallax translate — NO rotateX/Y to avoid WebGL rasterization pixelation ── */
+const MAX_SHIFT = 20;   // px — max translate offset
+const LERP_SPD  = 0.06; // smoothing
 
-let targetRx  = 0, targetRy  = 0;
-let currentRx = 0, currentRy = 0;
+let targetTx  = 0, targetTy  = 0;
+let currentTx = 0, currentTy = 0;
 let targetScale = 1, currentScale = 1;
 let isHovering  = false;
 let idleT       = 0;
@@ -1805,28 +1833,28 @@ function lerp(a, b, t) { return a + (b - a) * t; }
 
 const motionOK = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
 
-function animateTilt() {
-  idleT += 0.008;
+function animateParallax() {
+  idleT += 0.007;
 
   if (!isHovering && motionOK) {
-    /* Gentle figure-8 idle breathing so the model is never static */
-    targetRx = Math.sin(idleT * 0.65) * 2.8;
-    targetRy = Math.sin(idleT * 0.45) * 4.2;
+    /* Gentle idle float — model drifts in a slow ellipse so it's never static */
+    targetTx = Math.sin(idleT * 0.42) * 10;
+    targetTy = Math.sin(idleT * 0.63) * 7;
   }
 
-  currentRx    = lerp(currentRx,    targetRx,    LERP_SPD);
-  currentRy    = lerp(currentRy,    targetRy,    LERP_SPD);
-  currentScale = lerp(currentScale, targetScale, 0.05);
+  currentTx    = lerp(currentTx,    targetTx,    LERP_SPD);
+  currentTy    = lerp(currentTy,    targetTy,    LERP_SPD);
+  currentScale = lerp(currentScale, targetScale, 0.04);
 
   if (splineTilt) {
-    splineTilt.style.setProperty('--rx',       `${currentRx.toFixed(3)}deg`);
-    splineTilt.style.setProperty('--ry',       `${currentRy.toFixed(3)}deg`);
+    splineTilt.style.setProperty('--tx',       `${currentTx.toFixed(2)}px`);
+    splineTilt.style.setProperty('--ty',       `${currentTy.toFixed(2)}px`);
     splineTilt.style.setProperty('--sp-scale', currentScale.toFixed(4));
   }
 
-  rafId = requestAnimationFrame(animateTilt);
+  rafId = requestAnimationFrame(animateParallax);
 }
-animateTilt();
+animateParallax();
 
 /* ── Mouse enter/move/leave on hero ── */
 if (hero) {
@@ -1836,31 +1864,38 @@ if (hero) {
       if (!hintDismissed) dismissHint();
     }
 
-    const rect  = hero.getBoundingClientRect();
-    /* Normalize across full hero width — right half is the model */
-    const nx    = (e.clientX - rect.left) / rect.width;   // 0→1 left→right
-    const ny    = (e.clientY - rect.top)  / rect.height;  // 0→1 top→bottom
+    const rect = hero.getBoundingClientRect();
+    const nx   = (e.clientX - rect.left) / rect.width;   // 0→1
+    const ny   = (e.clientY - rect.top)  / rect.height;  // 0→1
 
-    /* Tilt: cursor right-of-center tilts model right, cursor high tilts forward */
-    targetRy = (nx - 0.5) * 2 * MAX_TILT;
-    targetRx = (0.5 - ny) * MAX_TILT * 0.65;
+    /* Translate: cursor right → model drifts right slightly (parallax depth) */
+    targetTx = (nx - 0.5) * MAX_SHIFT * 1.4;
+    targetTy = (ny - 0.5) * MAX_SHIFT * 0.9;
 
-    /* Spotlight position as percentage */
+    /* Move spotlight to cursor position */
     if (splineSpot) {
       splineSpot.style.setProperty('--sx', `${(nx * 100).toFixed(1)}%`);
       splineSpot.style.setProperty('--sy', `${(ny * 100).toFixed(1)}%`);
       splineSpot.style.opacity = '1';
     }
+    /* Shift the ambient glow slightly toward the cursor */
+    const glowEl = document.querySelector('.spline-glow');
+    if (glowEl && motionOK) {
+      glowEl.style.transform = `translate(${((nx - 0.5) * 30).toFixed(1)}px, calc(-50% + ${((ny - 0.5) * 20).toFixed(1)}px))`;
+    }
   }, { passive: true });
 
   hero.addEventListener('mouseleave', () => {
     isHovering  = false;
+    targetTx    = 0;
+    targetTy    = 0;
     targetScale = 1;
     if (splineSpot) splineSpot.style.opacity = '0';
+    const glowEl = document.querySelector('.spline-glow');
+    if (glowEl) glowEl.style.transform = 'translate(0, -50%)';
   });
 
-  /* Subtle scale-up on hover */
-  hero.addEventListener('mouseenter', () => { targetScale = 1.025; });
+  hero.addEventListener('mouseenter', () => { targetScale = 1.02; });
 }
 
 /* ── Hero parallax + scroll-driven model recession ── */
