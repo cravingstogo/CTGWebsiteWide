@@ -9,11 +9,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="CTGLogo.jpg">
 
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://images.deliveryhero.io">
+<link rel="dns-prefetch" href="https://unpkg.com">
+<link rel="dns-prefetch" href="https://prod.spline.design">
+
 <meta name="description" content="Cravings To Go — Soft Serve Churros, Frozen Yogurt, and Hot Drinks in Las Piñas.">
 <meta property="og:title" content="Cravings To Go">
 <meta property="og:description" content="Soft Serve Churros, Frozen Yogurt, and Hot Drinks in Las Piñas.">
 
 <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
+
+
+
 
 <style>
 :root {
@@ -793,6 +803,60 @@ footer span { color: var(--pink); }
 @media (max-width: 480px) {
   .nav-links { width: 100%; border-radius: 0; }
 }
+
+/* ── GPU ACCELERATION ── */
+.navbar,
+.hero-content,
+.menu-card,
+.contact-card,
+.ticker,
+.chat-btn {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Stop will-change on cards not being hovered — saves VRAM */
+.menu-card:not(:hover),
+.contact-card:not(:hover) {
+  will-change: auto;
+}
+
+/* Smoother font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+}
+
+/* Contain layout repaints to individual cards */
+.menu-card {
+  contain: layout style;
+}
+
+/* Spline fade-in */
+spline-viewer {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+/* Ticker GPU boost */
+.ticker {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Reduce motion for accessibility + battery */
+@media (prefers-reduced-motion: reduce) {
+  .ticker { animation: none; }
+  .chat-btn { animation: none; }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  spline-viewer { display: none; }
+}
+
 </style>
 </head>
 <body>
@@ -1071,61 +1135,89 @@ footer span { color: var(--pink); }
 <a href="https://www.facebook.com/cravingsfortogo" class="chat-btn" target="_blank">💬</a>
 
 <script>
-// Navbar scroll + active link highlighting
+// ── PERFORMANCE: passive scroll listener
 const navbar = document.getElementById('navbar');
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.nav-links > a:not(.order-btn)');
+const sections = [...document.querySelectorAll('section[id]')];
+const navLinks = [...document.querySelectorAll('.nav-links > a:not(.order-btn)')];
+
+// Debounced scroll using requestAnimationFrame — no jank
+let ticking = false;
 window.addEventListener('scroll', () => {
-  navbar.classList.toggle('scrolled', window.scrollY > 20);
+  if (!ticking) {
+    requestAnimationFrame(() => {
+      const scrollY = window.scrollY;
 
-  let current = '';
-  sections.forEach(section => {
-    if (window.scrollY >= section.offsetTop - 100) {
-      current = section.getAttribute('id');
-    }
-  });
+      // Navbar scrolled state
+      navbar.classList.toggle('scrolled', scrollY > 20);
 
-  navLinks.forEach(link => {
-    link.classList.remove('active');
-    if (link.getAttribute('href') === '#' + current) {
-      link.classList.add('active');
-    }
-  });
-});
+      // Active link highlighting
+      let current = '';
+      sections.forEach(section => {
+        if (scrollY >= section.offsetTop - 120) {
+          current = section.id;
+        }
+      });
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+      });
 
-// Scroll reveal
+      ticking = false;
+    });
+    ticking = true;
+  }
+}, { passive: true }); // passive = no scroll blocking
+
+// ── SCROLL REVEAL via IntersectionObserver (GPU-friendly)
 const reveals = document.querySelectorAll('.reveal');
-const observer = new IntersectionObserver((entries) => {
+const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry, i) => {
     if (entry.isIntersecting) {
-      setTimeout(() => entry.target.classList.add('visible'), i * 60);
-      observer.unobserve(entry.target);
+      setTimeout(() => entry.target.classList.add('visible'), i * 50);
+      revealObserver.unobserve(entry.target);
     }
   });
-}, { threshold: 0.12 });
-reveals.forEach(el => observer.observe(el));
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+reveals.forEach(el => revealObserver.observe(el));
 
-// Loader
+// ── LOADER
 window.addEventListener("load", () => {
   const loader = document.getElementById("loader");
   setTimeout(() => {
     loader.style.opacity = "0";
-    setTimeout(() => loader.style.display = "none", 600);
+    setTimeout(() => {
+      loader.style.display = "none";
+    }, 600);
   }, 1800);
 });
 
-// Mobile toggle
+// ── MOBILE TOGGLE
 function toggleMenu() {
   document.getElementById('navLinks').classList.toggle('show');
 }
 
-// Close mobile menu on link click
+// Close menu on nav link tap
 document.querySelectorAll('#navLinks a').forEach(link => {
   link.addEventListener('click', () => {
-    document.getElementById('navLinks').classList.remove('remove');
+    document.getElementById('navLinks').classList.remove('show');
   });
 });
+
+// ── SPLINE FADE-IN — reliable version
+const splineViewer = document.querySelector('spline-viewer');
+if (splineViewer) {
+  splineViewer.style.opacity = '0';
+  splineViewer.style.transition = 'opacity 1.2s ease';
+
+  // Try the load event first
+  splineViewer.addEventListener('load', () => {
+    splineViewer.style.opacity = '1';
+  });
+
+  // Fallback — force show after 3s regardless
+  setTimeout(() => {
+    splineViewer.style.opacity = '1';
+  }, 3000);
+}
 </script>
 </body>
 </html>
-
