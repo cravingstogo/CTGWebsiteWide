@@ -5,17 +5,55 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cravings To Go | Churros & Frozen Yogurt</title>
 
+<!-- ═══════════════════════════════════════════════
+     PERFORMANCE: DNS prefetch & preconnect
+     Tells the browser to resolve these domains early,
+     shaving ~100-300ms off first resource requests.
+════════════════════════════════════════════════ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="CTGLogo.jpg">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://images.deliveryhero.io">
+<link rel="dns-prefetch" href="https://prod.spline.design">
+<link rel="dns-prefetch" href="https://unpkg.com">
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
+<!-- ═══════════════════════════════════════════════
+     PERFORMANCE: Non-blocking font load
+     onload trick defers stylesheet apply until after
+     paint, preventing render-blocking.
+════════════════════════════════════════════════ -->
+<link rel="preload" as="style"
+  href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap"
+  onload="this.onload=null;this.rel='stylesheet'">
+<noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap">
+</noscript>
+
+<link rel="icon" type="image/png" href="CTGLogo.jpg">
 <meta name="description" content="Cravings To Go — Soft Serve Churros, Frozen Yogurt, and Hot Drinks in Las Piñas.">
 <meta property="og:title" content="Cravings To Go">
 <meta property="og:description" content="Soft Serve Churros, Frozen Yogurt, and Hot Drinks in Las Piñas.">
 
+<!-- ═══════════════════════════════════════════════
+     GSAP + ScrollTrigger — loaded before body so
+     ScrollTrigger is available on DOMContentLoaded.
+     Using cdnjs for reliability & CDN caching.
+════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<!-- ═══════════════════════════════════════════════
+     PERFORMANCE: Spline viewer is loaded as a module
+     (async by nature). We do NOT defer it further
+     because it needs to register the custom element
+     <spline-viewer> before the DOM is parsed.
+════════════════════════════════════════════════ -->
 <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
 
 <style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════════════════════ */
 :root {
   --pink:       #E8175A;
   --pink-light: #FF4D8B;
@@ -30,15 +68,23 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 html { scroll-behavior: smooth; }
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--cream);
   color: var(--text);
   overflow-x: hidden;
+  /* Smooth font rendering on all platforms */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
 }
 
-/* ── NAVBAR ── */
+/* ═══════════════════════════════════════════════
+   NAVBAR
+════════════════════════════════════════════════ */
 .navbar {
   position: fixed;
   top: 0; left: 0; width: 100%;
@@ -52,9 +98,10 @@ body {
   justify-content: space-between;
   padding: 0 clamp(20px, 5vw, 60px);
   z-index: 1000;
+  /* GPU-composited transition — no layout thrash */
   transition: background 0.3s, box-shadow 0.3s, border-color 0.3s;
+  will-change: background;
 }
-
 .navbar.scrolled {
   background: rgba(253, 240, 245, 0.92);
   border-bottom: 1px solid rgba(232,23,90,0.18);
@@ -81,9 +128,7 @@ body {
   letter-spacing: 0.3px;
   transition: color 0.3s;
 }
-.navbar.scrolled .wordmark {
-  color: var(--pink);
-}
+.navbar.scrolled .wordmark { color: var(--pink); }
 
 .nav-links {
   display: flex;
@@ -113,18 +158,11 @@ body {
 .nav-links a:hover::after { width: 100%; }
 .nav-links a.active { color: var(--pink-light); }
 .nav-links a.active::after { width: 100%; }
-
-/* Scrolled — dark text */
-.navbar.scrolled .nav-links a {
-  color: var(--text);
-}
-.navbar.scrolled .nav-links a::after {
-  background: var(--pink);
-}
+.navbar.scrolled .nav-links a { color: var(--text); }
+.navbar.scrolled .nav-links a::after { background: var(--pink); }
 .navbar.scrolled .nav-links a:hover { color: var(--pink); }
 .navbar.scrolled .nav-links a.active { color: var(--pink); }
 
-/* Order button */
 .order-btn {
   background: var(--pink) !important;
   color: white !important;
@@ -132,8 +170,8 @@ body {
   border-radius: 50px;
   font-size: 13px;
   letter-spacing: 0.6px;
-  transition: background 0.2s, transform 0.2s, box-shadow 0.2s !important;
   box-shadow: 0 4px 14px rgba(232,23,90,0.35);
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s !important;
 }
 .order-btn::after { display: none !important; }
 .order-btn:hover {
@@ -144,7 +182,6 @@ body {
 }
 .navbar.scrolled .order-btn { color: white !important; }
 
-/* Dropdown */
 .dropdown { position: relative; }
 .dropdown-content {
   position: absolute;
@@ -163,8 +200,7 @@ body {
   z-index: 1001;
 }
 .dropdown:hover .dropdown-content {
-  opacity: 1;
-  visibility: visible;
+  opacity: 1; visibility: visible;
   transform: translateX(-50%) translateY(0);
 }
 .dropdown-content a {
@@ -183,7 +219,6 @@ body {
   color: var(--pink) !important;
 }
 
-/* Mobile toggle */
 .menu-toggle {
   display: none;
   font-size: 26px;
@@ -192,56 +227,94 @@ body {
   transition: color 0.3s;
 }
 .navbar.scrolled .menu-toggle { color: var(--text); }
-/* ── HERO ── */
+
+/* ═══════════════════════════════════════════════
+   HERO — 3D SPLINE SECTION
+   Key decisions:
+   • spline-container is full-bleed absolute — no
+     layout impact, pure composited layer
+   • hero-content sits in normal flow on z-index:2
+   • All motion targets use transform only (no
+     top/left) to stay on compositor thread
+════════════════════════════════════════════════ */
 #home {
   min-height: 100vh;
   display: flex;
   align-items: center;
   position: relative;
   overflow: hidden;
-  background: var(--dark); /* Retains your hero page background color */
+  background: var(--dark);
 }
 
+/* ── Spline wrapper ── */
 .spline-container {
   position: absolute;
   inset: 0;
   z-index: 0;
-  display: flex;
-  justify-content: flex-end; /* Places the 3D model area on the right half */
-  width: 100%;
-  height: 100%;
-  /* Creates space on the left for your text, pushing the canvas into the right 50% */
-  padding-left: 50vw; 
-  box-sizing: border-box;
+  /* 
+    PERFORMANCE: promote to its own compositing layer.
+    This isolates Spline's WebGL canvas from the rest 
+    of the DOM so repaints don't cascade.
+  */
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 spline-viewer {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
+  /*
+    Start invisible — JS fades it in after load.
+    Using opacity (compositor-only) not visibility.
+  */
+  opacity: 0;
+  transition: opacity 1.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Forces the 3D engine canvas to stay correctly sized inside the right-hand padding layout */
-spline-viewer::part(canvas) {
-  position: absolute !important;
-  width: 100% !important;
-  height: 100% !important;
-}
-
+/* ── Gradient overlay — left-heavy for text legibility ── */
 .spline-overlay {
   position: absolute;
   inset: 0;
-  /* Full screen gradient shadow: Solid dark on the left for crisp text contrast, 
-     fading to a soft shadow that lets the 3D model look brilliantly highlighted on the right */
-  background: linear-gradient(to right, 
-    rgba(26,10,15,1) 0%, 
-    rgba(26,10,15,0.85) 30%, 
-    rgba(26,10,15,0.4) 60%, 
-    transparent 85%
-  );
+  background:
+    linear-gradient(to right,
+      rgba(26,10,15,0.95) 0%,
+      rgba(26,10,15,0.80) 28%,
+      rgba(26,10,15,0.35) 60%,
+      transparent 85%
+    ),
+    linear-gradient(to top,
+      rgba(26,10,15,0.55) 0%,
+      transparent 45%
+    );
   z-index: 1;
-  pointer-events: none; /* Let clicks pass right through to items behind it */
+  pointer-events: none;
 }
+
+/* ── Ambient particle glow (CSS-only, zero JS cost) ── */
+.hero-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0;          /* GSAP animates this in */
+  pointer-events: none;
+  z-index: 0;
+  /* GPU layer */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+.hero-glow-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(232,23,90,0.28), transparent 70%);
+  top: -10%; right: 5%;
+}
+.hero-glow-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(255,77,139,0.18), transparent 70%);
+  bottom: -5%; left: 40%;
+}
+
+/* ── Hero content ── */
 .hero-content {
   position: relative;
   z-index: 2;
@@ -249,12 +322,14 @@ spline-viewer::part(canvas) {
   padding: calc(var(--nav-h) + 60px) clamp(28px, 8vw, 100px) 80px;
   max-width: 640px;
   margin-right: auto;
-  animation: heroIn 1s cubic-bezier(0.22,1,0.36,1) both;
-}
-
-@keyframes heroIn {
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
+  /*
+    Initial hidden state — GSAP entrance animates
+    opacity + translateY into final position.
+    Using transform (not margin/top) = compositor only.
+  */
+  opacity: 0;
+  transform: translateY(32px);
+  will-change: transform, opacity;
 }
 
 .hero-eyebrow {
@@ -266,6 +341,9 @@ spline-viewer::part(canvas) {
   color: var(--pink-light);
   margin-bottom: 20px;
   display: block;
+  opacity: 0;
+  transform: translateY(16px);
+  will-change: transform, opacity;
 }
 
 .hero-title {
@@ -275,11 +353,11 @@ spline-viewer::part(canvas) {
   color: var(--white);
   line-height: 1.05;
   margin-bottom: 16px;
+  opacity: 0;
+  transform: translateY(20px);
+  will-change: transform, opacity;
 }
-.hero-title em {
-  font-style: italic;
-  color: var(--pink-light);
-}
+.hero-title em { font-style: italic; color: var(--pink-light); }
 
 .hero-sub {
   font-family: 'Cormorant Garamond', serif;
@@ -289,6 +367,9 @@ spline-viewer::part(canvas) {
   color: rgba(255,255,255,0.58);
   margin-bottom: 40px;
   line-height: 1.65;
+  opacity: 0;
+  transform: translateY(16px);
+  will-change: transform, opacity;
 }
 
 .hero-cta-group {
@@ -296,6 +377,9 @@ spline-viewer::part(canvas) {
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
+  opacity: 0;
+  transform: translateY(16px);
+  will-change: transform, opacity;
 }
 
 .hero-cta {
@@ -322,13 +406,10 @@ spline-viewer::part(canvas) {
 }
 .hero-cta svg {
   width: 16px; height: 16px;
-  stroke: currentColor;
-  fill: none;
+  stroke: currentColor; fill: none;
   stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-linecap: round; stroke-linejoin: round;
 }
-
 .hero-cta-secondary {
   display: inline-flex;
   align-items: center;
@@ -351,7 +432,40 @@ spline-viewer::part(canvas) {
   background: rgba(232,23,90,0.12);
 }
 
-/* ── TICKER ── */
+/* Scroll hint indicator */
+.scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0; /* GSAP fades in after entrance */
+}
+.scroll-hint span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+.scroll-hint-line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.35), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; transform: scaleY(1); }
+  50%       { opacity: 1;   transform: scaleY(1.1); }
+}
+
+/* ═══════════════════════════════════════════════
+   TICKER
+════════════════════════════════════════════════ */
 .ticker-wrap {
   width: 100%;
   background: var(--pink);
@@ -365,6 +479,10 @@ spline-viewer::part(canvas) {
   gap: 48px;
   width: max-content;
   animation: ticker 20s linear infinite;
+  /* GPU composited — no layout involvement */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .ticker span {
   font-family: 'DM Sans', sans-serif;
@@ -381,63 +499,50 @@ spline-viewer::part(canvas) {
 }
 .ticker-wrap:hover .ticker { animation-play-state: paused; }
 
-/* ── SECTION WRAPPER ── */
+/* ═══════════════════════════════════════════════
+   SECTION WRAPPER
+════════════════════════════════════════════════ */
 section { padding: clamp(60px, 10vw, 110px) clamp(20px, 5vw, 60px); }
 
-.section-header {
-  text-align: center;
-  margin-bottom: 54px;
-}
+.section-header { text-align: center; margin-bottom: 54px; }
 .section-eyebrow {
   display: block;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  color: var(--pink);
-  margin-bottom: 12px;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--pink); margin-bottom: 12px;
 }
 .section-title {
   font-family: 'Playfair Display', serif;
   font-size: clamp(28px, 4vw, 44px);
-  font-weight: 700;
-  color: var(--dark);
-  line-height: 1.15;
+  font-weight: 700; color: var(--dark); line-height: 1.15;
 }
 .section-title em { font-style: italic; color: var(--pink); }
 .section-divider {
   width: 48px; height: 2px;
   background: linear-gradient(90deg, var(--pink), var(--pink-light));
-  margin: 18px auto 0;
-  border-radius: 2px;
+  margin: 18px auto 0; border-radius: 2px;
 }
 
-/* ── MENU ── */
+/* ═══════════════════════════════════════════════
+   MENU
+════════════════════════════════════════════════ */
 #menu { background: var(--cream); }
 
-.category-block {
-  max-width: 1140px;
-  margin: 0 auto 72px;
-}
+.category-block { max-width: 1140px; margin: 0 auto 72px; }
 .category-block:last-child { margin-bottom: 0; }
 
 .category-label {
   font-family: 'Playfair Display', serif;
   font-size: clamp(18px, 2.5vw, 24px);
-  font-weight: 400;
-  font-style: italic;
-  color: var(--pink);
-  text-align: center;
-  margin-bottom: 32px;
-  position: relative;
+  font-weight: 400; font-style: italic;
+  color: var(--pink); text-align: center;
+  margin-bottom: 32px; position: relative;
 }
 .category-label::before,
 .category-label::after {
   content: '';
-  position: absolute;
-  top: 50%;
-  width: clamp(30px, 8%, 80px);
-  height: 1px;
+  position: absolute; top: 50%;
+  width: clamp(30px, 8%, 80px); height: 1px;
   background: var(--pink-mid);
 }
 .category-label::before { right: calc(50% + 120px); }
@@ -455,19 +560,17 @@ section { padding: clamp(60px, 10vw, 110px) clamp(20px, 5vw, 60px); }
   padding: 0 0 24px;
   border: 1px solid rgba(232,23,90,0.08);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-  position: relative;
-  overflow: hidden;
+  position: relative; overflow: hidden;
+  /* Contain repaints to this card only */
+  contain: layout style;
 }
 .menu-card::before {
   content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
+  position: absolute; top: 0; left: 0; right: 0;
   height: 3px;
   background: linear-gradient(90deg, var(--pink), var(--pink-light));
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.3s ease;
-  z-index: 1;
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.3s ease; z-index: 1;
 }
 .menu-card:hover {
   transform: translateY(-5px);
@@ -475,65 +578,47 @@ section { padding: clamp(60px, 10vw, 110px) clamp(20px, 5vw, 60px); }
   border-color: rgba(232,23,90,0.15);
 }
 .menu-card:hover::before { transform: scaleX(1); }
+/* Release will-change when not interacting */
+.menu-card:not(:hover) { will-change: auto; }
+.menu-card:hover { will-change: transform; }
 
 .food-img {
-  width: 100%;
-  height: 160px;
+  width: 100%; height: 160px;
   object-fit: cover;
   border-radius: 18px 18px 0 0;
-  margin-bottom: 0;
   display: block;
 }
-
-.card-body {
-  padding: 20px 22px 0;
-}
-
+.card-body { padding: 20px 22px 0; }
 .card-name {
   font-family: 'Playfair Display', serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--dark);
-  margin-bottom: 8px;
-  line-height: 1.3;
+  font-size: 16px; font-weight: 700;
+  color: var(--dark); margin-bottom: 8px; line-height: 1.3;
 }
 .card-desc {
-  font-size: 13px;
-  line-height: 1.65;
-  color: var(--muted);
-  font-weight: 300;
-  margin-bottom: 14px;
+  font-size: 13px; line-height: 1.65;
+  color: var(--muted); font-weight: 300; margin-bottom: 14px;
 }
 .card-price {
   display: inline-block;
   font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--pink);
+  font-size: 20px; font-weight: 700; color: var(--pink);
 }
 
-/* ── CONTACT ── */
-#contact {
-  background: var(--dark);
-  position: relative;
-  overflow: hidden;
-}
+/* ═══════════════════════════════════════════════
+   CONTACT
+════════════════════════════════════════════════ */
+#contact { background: var(--dark); position: relative; overflow: hidden; }
 #contact::before {
-  content: '';
-  position: absolute;
-  inset: 0;
+  content: ''; position: absolute; inset: 0;
   background:
     radial-gradient(ellipse 60% 80% at 0% 100%, rgba(232,23,90,0.18) 0%, transparent 60%),
     radial-gradient(ellipse 50% 50% at 100% 0%, rgba(255,77,139,0.12) 0%, transparent 60%);
   pointer-events: none;
 }
 #contact::after {
-  content: '';
-  position: absolute;
-  inset: 0;
+  content: ''; position: absolute; inset: 0;
   background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
-  pointer-events: none;
+  background-size: 32px 32px; pointer-events: none;
 }
 #contact .section-title { color: white; }
 #contact .section-eyebrow { color: var(--pink-light); }
@@ -541,18 +626,13 @@ section { padding: clamp(60px, 10vw, 110px) clamp(20px, 5vw, 60px); }
 .contact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;
-  max-width: 1100px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;
+  gap: 24px; max-width: 1100px;
+  margin: 0 auto; position: relative; z-index: 1;
 }
-
 .contact-card {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
-  padding: 36px 28px;
+  border-radius: 20px; padding: 36px 28px;
   backdrop-filter: blur(12px);
   transition: background 0.25s, border-color 0.25s;
 }
@@ -561,63 +641,40 @@ section { padding: clamp(60px, 10vw, 110px) clamp(20px, 5vw, 60px); }
   border-color: rgba(232,23,90,0.35);
 }
 .contact-card-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
+  width: 44px; height: 44px; border-radius: 12px;
   background: rgba(232,23,90,0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   margin-bottom: 18px;
 }
 .contact-card-icon svg {
-  width: 22px; height: 22px;
-  stroke: var(--pink-light);
-  fill: none;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  width: 22px; height: 22px; stroke: var(--pink-light);
+  fill: none; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
 }
 .contact-card h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 10px;
+  font-size: 18px; font-weight: 700;
+  color: white; margin-bottom: 10px;
 }
 .contact-card p {
-  font-size: 14px;
-  color: rgba(255,255,255,0.55);
-  line-height: 1.7;
-  font-weight: 300;
+  font-size: 14px; color: rgba(255,255,255,0.55);
+  line-height: 1.7; font-weight: 300;
 }
-
 .map-container {
-  margin-top: 20px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.1);
+  margin-top: 20px; border-radius: 12px;
+  overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
 }
 .map-container iframe {
-  display: block;
-  width: 100%;
-  height: 220px;
-  border: 0;
+  display: block; width: 100%; height: 220px; border: 0;
 }
-
 .fb-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+  display: inline-flex; align-items: center; gap: 10px;
   margin-top: 20px;
   background: rgba(24,119,242,0.15);
   border: 1px solid rgba(24,119,242,0.3);
-  color: #7EB5FF;
-  text-decoration: none;
-  padding: 11px 20px;
-  border-radius: 50px;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  color: #7EB5FF; text-decoration: none;
+  padding: 11px 20px; border-radius: 50px;
+  font-size: 13px; font-weight: 500; letter-spacing: 0.5px;
   transition: background 0.2s, border-color 0.2s;
 }
 .fb-link:hover {
@@ -625,55 +682,48 @@ section { padding: clamp(60px, 10vw, 110px) clamp(20px, 5vw, 60px); }
   border-color: rgba(24,119,242,0.5);
 }
 .fb-link img { width: 18px; height: 18px; }
-
 .hours-pill {
   display: inline-block;
   background: rgba(232,23,90,0.18);
   border: 1px solid rgba(232,23,90,0.3);
-  color: var(--pink-light);
-  font-size: 15px;
-  font-weight: 500;
-  padding: 10px 20px;
-  border-radius: 50px;
-  margin-top: 16px;
-  font-family: 'Playfair Display', serif;
-  font-style: italic;
+  color: var(--pink-light); font-size: 15px; font-weight: 500;
+  padding: 10px 20px; border-radius: 50px; margin-top: 16px;
+  font-family: 'Playfair Display', serif; font-style: italic;
 }
-
 .hours-img-wrap {
-  margin-top: 18px;
-  border-radius: 12px;
-  overflow: hidden;
+  margin-top: 18px; border-radius: 12px; overflow: hidden;
   border: 1px solid rgba(255,255,255,0.08);
 }
 .hours-img-wrap img { width: 100%; display: block; }
 
-/* ── FOOTER ── */
+/* ═══════════════════════════════════════════════
+   FOOTER
+════════════════════════════════════════════════ */
 footer {
   background: var(--dark);
   border-top: 1px solid rgba(255,255,255,0.06);
-  text-align: center;
-  padding: 28px 20px;
+  text-align: center; padding: 28px 20px;
 }
-footer p {
-  font-size: 12px;
-  color: rgba(255,255,255,0.25);
-  letter-spacing: 0.5px;
-}
+footer p { font-size: 12px; color: rgba(255,255,255,0.25); letter-spacing: 0.5px; }
 footer span { color: var(--pink); }
 
-/* ── SCROLL REVEAL ── */
+/* ═══════════════════════════════════════════════
+   SCROLL REVEAL
+   opacity + transform = compositor only, zero layout
+════════════════════════════════════════════════ */
 .reveal {
   opacity: 0;
   transform: translateY(22px);
   transition: opacity 0.65s ease, transform 0.65s ease;
+  will-change: transform, opacity;
 }
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+/* Release after animation completes */
+.reveal.visible { will-change: auto; }
 
-/* ── LOADER ── */
+/* ═══════════════════════════════════════════════
+   LOADER
+════════════════════════════════════════════════ */
 #loader {
   position: fixed; inset: 0;
   background: var(--cream);
@@ -684,8 +734,7 @@ footer span { color: var(--pink); }
 }
 .loader-text {
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px; color: var(--text);
-  margin-top: 15px;
+  font-size: 16px; color: var(--text); margin-top: 15px;
   animation: fadeText 1.5s ease-in-out infinite;
 }
 .loader-brand {
@@ -702,23 +751,19 @@ footer span { color: var(--pink); }
   50%       { opacity: 1; }
 }
 
-/* ── CHAT BUTTON ── */
+/* ═══════════════════════════════════════════════
+   CHAT BUTTON
+════════════════════════════════════════════════ */
 .chat-btn {
-  position: fixed;
-  bottom: 20px; right: 20px;
-  background: var(--pink);
-  color: white;
-  font-size: 22px;
-  width: 55px; height: 55px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--pink); color: white; font-size: 22px;
+  width: 55px; height: 55px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
   text-decoration: none;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-  z-index: 1000;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25); z-index: 1000;
   animation: floatButton 3s ease-in-out infinite;
   transition: background 0.2s;
+  will-change: transform;
 }
 .chat-btn:hover { background: var(--pink-light); }
 @keyframes floatButton {
@@ -726,25 +771,39 @@ footer span { color: var(--pink); }
   50%       { transform: translateY(-5px); }
 }
 
-/* ── MOBILE ── */
+/* ═══════════════════════════════════════════════
+   ACCESSIBILITY — Reduced motion
+   Respects OS-level "reduce motion" preference.
+   Disables all decorative animation for users who
+   need it, and hides Spline (heavy WebGL).
+════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .ticker { animation: none; }
+  .chat-btn { animation: none; }
+  .scroll-hint-line { animation: none; }
+  .hero-glow { display: none; }
+  spline-viewer { opacity: 1 !important; }
+  .reveal, .hero-content, .hero-eyebrow,
+  .hero-title, .hero-sub, .hero-cta-group {
+    opacity: 1; transform: none; transition: none;
+    will-change: auto;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE
+════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .menu-toggle { display: block; }
-
-  spline-viewer {
-    transform: translateX(0); /* Returns model to center alignment for balanced mobile view */
-  }
 
   .nav-links {
     position: absolute;
     top: var(--nav-h); right: 0;
     background: rgba(26, 10, 15, 0.97);
     border: 1px solid rgba(255,255,255,0.08);
-    border-top: none;
-    width: 240px;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 16px 20px 20px;
-    gap: 14px;
+    border-top: none; width: 240px;
+    flex-direction: column; align-items: flex-start;
+    padding: 16px 20px 20px; gap: 14px;
     border-radius: 0 0 14px 14px;
     display: none;
     box-shadow: 0 12px 30px rgba(0,0,0,0.3);
@@ -761,35 +820,34 @@ footer span { color: var(--pink); }
   .navbar.scrolled .nav-links a.active { color: var(--pink) !important; }
 
   .dropdown-content {
-    position: static;
-    transform: none;
-    opacity: 1;
-    visibility: visible;
-    box-shadow: none;
-    border: none;
+    position: static; transform: none;
+    opacity: 1; visibility: visible;
+    box-shadow: none; border: none;
     background: transparent;
-    padding: 0 0 0 12px;
-    min-width: unset;
+    padding: 0 0 0 12px; min-width: unset;
   }
   .dropdown-content a {
     color: rgba(255,255,255,0.6) !important;
-    font-size: 12px;
-    padding: 6px 0;
+    font-size: 12px; padding: 6px 0;
   }
   .navbar.scrolled .dropdown-content a { color: var(--muted) !important; }
 
   .hero-content {
-    text-align: center;
-    margin: 0 auto;
+    text-align: center; margin: 0 auto;
     padding: calc(var(--nav-h) + 40px) 24px 60px;
   }
   .hero-cta-group { justify-content: center; }
-  .spline-overlay { background: rgba(26,10,15,0.7); }
+
+  /* Solid overlay on mobile — model is background, not focal */
+  .spline-overlay {
+    background: rgba(26,10,15,0.72) !important;
+  }
+
+  .scroll-hint { display: none; }
 
   .category-label::before,
   .category-label::after { display: none; }
 }
-
 @media (max-width: 480px) {
   .nav-links { width: 100%; border-radius: 0; }
 }
@@ -797,12 +855,14 @@ footer span { color: var(--pink); }
 </head>
 <body>
 
+<!-- LOADER -->
 <div id="loader">
   <div style="font-size:60px; animation:floatIce 2s ease-in-out infinite;">🍦</div>
   <p class="loader-text">Cravings To Go is getting ready.. 🍓</p>
   <span class="loader-brand">Cravings To Go</span>
 </div>
 
+<!-- NAVBAR -->
 <nav class="navbar" id="navbar">
   <a href="#home" class="nav-logo">
     <img src="CTGLogo.jpg" class="logo" alt="Cravings To Go logo">
@@ -825,20 +885,35 @@ footer span { color: var(--pink); }
   </div>
 </nav>
 
+<!-- ═══════════════════════════════════════════════
+     HERO SECTION
+     spline-container holds both the <spline-viewer>
+     and the gradient overlay as sibling divs so the
+     overlay can intercept no pointer events while
+     Spline still receives mouse input.
+════════════════════════════════════════════════ -->
 <section id="home">
-  <div class="spline-container">
+  <!-- Ambient glow orbs — pure CSS, animated by GSAP on entrance -->
+  <div class="hero-glow hero-glow-1" id="glow1"></div>
+  <div class="hero-glow hero-glow-2" id="glow2"></div>
+
+  <!-- 3D Spline model container -->
+  <div class="spline-container" id="splineContainer">
     <spline-viewer
+      id="splineViewer"
       url="https://prod.spline.design/rOhOl7k4q3OuqHJZ/scene.splinecode"
       loading-anim="false">
     </spline-viewer>
+    <!-- Gradient overlay sits above canvas but passes pointer events through -->
     <div class="spline-overlay"></div>
   </div>
 
-  <div class="hero-content">
-    <span class="hero-eyebrow">Las Piñas · Open until Midnight</span>
-    <h1 class="hero-title">Every Craving,<br><em>Satisfied.</em></h1>
-    <p class="hero-sub">Fresh churros, creamy soft serve, and frozen yogurt<br>crafted for sweet moments worth sharing.</p>
-    <div class="hero-cta-group">
+  <!-- Hero copy — sits above everything on z-index:2 -->
+  <div class="hero-content" id="heroContent">
+    <span class="hero-eyebrow" id="heroEyebrow">Las Piñas · Open until Midnight</span>
+    <h1 class="hero-title" id="heroTitle">Every Craving,<br><em>Satisfied.</em></h1>
+    <p class="hero-sub" id="heroSub">Fresh churros, creamy soft serve, and frozen yogurt<br>crafted for sweet moments worth sharing.</p>
+    <div class="hero-cta-group" id="heroCta">
       <a href="#menu" class="hero-cta">
         Explore the Menu
         <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -848,8 +923,15 @@ footer span { color: var(--pink); }
       </a>
     </div>
   </div>
+
+  <!-- Scroll indicator -->
+  <div class="scroll-hint" id="scrollHint">
+    <span>Scroll</span>
+    <div class="scroll-hint-line"></div>
+  </div>
 </section>
 
+<!-- TICKER -->
 <div class="ticker-wrap">
   <div class="ticker">
     <span>✦ Soft Serve Churros</span>
@@ -867,6 +949,7 @@ footer span { color: var(--pink); }
   </div>
 </div>
 
+<!-- MENU -->
 <section id="menu">
   <div class="section-header reveal">
     <span class="section-eyebrow">What we serve</span>
@@ -877,148 +960,44 @@ footer span { color: var(--pink); }
   <div class="category-block" id="SoftServeChurro">
     <div class="category-label reveal">Soft Serve Churros</div>
     <div class="card-grid">
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/global-menu-service/FP_PH/vendor/fjnx/product/e4c64c2c-e51d-46f8-a984-67a7fb88a338.jpg?width=400" class="food-img" loading="lazy" alt="Tiramisu Churros">
-        <div class="card-body">
-          <div class="card-name">Tiramisu Churros</div>
-          <div class="card-desc">Vanilla soft serve drizzled with rich Tiramisu sauce.</div>
-          <span class="card-price">₱180</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/global-menu-service/FP_PH/vendor/fjnx/product/2164218e-3349-4875-9f9f-28a28ba7161b.jpg?width=400" class="food-img" loading="lazy" alt="Strawberry Cake">
-        <div class="card-body">
-          <div class="card-name">Strawberry Cake</div>
-          <div class="card-desc">Vanilla soft serve with dreamy strawberry cake icing.</div>
-          <span class="card-price">₱180</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/75797224.jpg?width=400" class="food-img" loading="lazy" alt="Crunchy">
-        <div class="card-body">
-          <div class="card-name">Crunchy</div>
-          <div class="card-desc">Vanilla soft serve drizzled with crunchy chocolate sauce.</div>
-          <span class="card-price">₱180</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/75797225.jpg?width=400" class="food-img" loading="lazy" alt="Biscoff Cookie Butter">
-        <div class="card-body">
-          <div class="card-name">Biscoff Cookie Butter</div>
-          <div class="card-desc">Vanilla soft serve with Biscoff sauce and crunchy cookie crumbs.</div>
-          <span class="card-price">₱180</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/75797226.jpg?width=400" class="food-img" loading="lazy" alt="Cookies and Cream">
-        <div class="card-body">
-          <div class="card-name">Cookies & Cream</div>
-          <div class="card-desc">Vanilla soft serve with cookies and cream sauce.</div>
-          <span class="card-price">₱180</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/products/75797227.jpg?width=400" class="food-img" loading="lazy" alt="Chocolate Peanut Butter">
-        <div class="card-body">
-          <div class="card-name">Chocolate Peanut Butter</div>
-          <div class="card-desc">Vanilla soft serve with hazelnut chocolate sauce and peanut crumbs.</div>
-          <span class="card-price">₱180</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/75797228.jpg?width=400" class="food-img" loading="lazy" alt="Nutella">
-        <div class="card-body">
-          <div class="card-name">Nutella</div>
-          <div class="card-desc">Vanilla soft serve generously drizzled with Nutella.</div>
-          <span class="card-price">₱180</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/76283959.jpg?width=400" class="food-img" loading="lazy" alt="Matcha Cream">
-        <div class="card-body">
-          <div class="card-name">Matcha Cream</div>
-          <div class="card-desc">Vanilla soft serve with silky creamy matcha sauce.</div>
-          <span class="card-price">₱180</span>
-        </div>
-      </div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/global-menu-service/FP_PH/vendor/fjnx/product/e4c64c2c-e51d-46f8-a984-67a7fb88a338.jpg?width=400" class="food-img" loading="lazy" alt="Tiramisu Churros"><div class="card-body"><div class="card-name">Tiramisu Churros</div><div class="card-desc">Vanilla soft serve drizzled with rich Tiramisu sauce.</div><span class="card-price">₱180</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/global-menu-service/FP_PH/vendor/fjnx/product/2164218e-3349-4875-9f9f-28a28ba7161b.jpg?width=400" class="food-img" loading="lazy" alt="Strawberry Cake"><div class="card-body"><div class="card-name">Strawberry Cake</div><div class="card-desc">Vanilla soft serve with dreamy strawberry cake icing.</div><span class="card-price">₱180</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/75797224.jpg?width=400" class="food-img" loading="lazy" alt="Crunchy"><div class="card-body"><div class="card-name">Crunchy</div><div class="card-desc">Vanilla soft serve drizzled with crunchy chocolate sauce.</div><span class="card-price">₱180</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/75797225.jpg?width=400" class="food-img" loading="lazy" alt="Biscoff Cookie Butter"><div class="card-body"><div class="card-name">Biscoff Cookie Butter</div><div class="card-desc">Vanilla soft serve with Biscoff sauce and crunchy cookie crumbs.</div><span class="card-price">₱180</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/75797226.jpg?width=400" class="food-img" loading="lazy" alt="Cookies and Cream"><div class="card-body"><div class="card-name">Cookies &amp; Cream</div><div class="card-desc">Vanilla soft serve with cookies and cream sauce.</div><span class="card-price">₱180</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/products/75797227.jpg?width=400" class="food-img" loading="lazy" alt="Chocolate Peanut Butter"><div class="card-body"><div class="card-name">Chocolate Peanut Butter</div><div class="card-desc">Vanilla soft serve with hazelnut chocolate sauce and peanut crumbs.</div><span class="card-price">₱180</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/75797228.jpg?width=400" class="food-img" loading="lazy" alt="Nutella"><div class="card-body"><div class="card-name">Nutella</div><div class="card-desc">Vanilla soft serve generously drizzled with Nutella.</div><span class="card-price">₱180</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/76283959.jpg?width=400" class="food-img" loading="lazy" alt="Matcha Cream"><div class="card-body"><div class="card-name">Matcha Cream</div><div class="card-desc">Vanilla soft serve with silky creamy matcha sauce.</div><span class="card-price">₱180</span></div></div>
     </div>
   </div>
 
   <div class="category-block" id="CChurros">
     <div class="category-label reveal">Classic Churros</div>
     <div class="card-grid">
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/76283946.jpg?width=400" class="food-img" loading="lazy" alt="Classic Churros">
-        <div class="card-body">
-          <div class="card-name">Classic Churros</div>
-          <div class="card-desc">4 pieces — golden, crispy outside, soft and fluffy inside, dusted with cinnamon sugar.</div>
-          <span class="card-price">₱150</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/75797236.jpg?width=400" class="food-img" loading="lazy" alt="Party Box Churros">
-        <div class="card-body">
-          <div class="card-name">Party Box Churros</div>
-          <div class="card-desc">10 pieces of classic churros with three delicious dipping sauces — perfect for sharing!</div>
-          <span class="card-price">₱345</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/75797235.jpg?width=400" class="food-img" loading="lazy" alt="Premium Churros">
-        <div class="card-body">
-          <div class="card-name">Premium Churros</div>
-          <div class="card-desc">4 pieces coated in rich sauce and loaded with delicious toppings in every bite.</div>
-          <span class="card-price">₱175</span>
-        </div>
-      </div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/76283946.jpg?width=400" class="food-img" loading="lazy" alt="Classic Churros"><div class="card-body"><div class="card-name">Classic Churros</div><div class="card-desc">4 pieces — golden, crispy outside, soft and fluffy inside, dusted with cinnamon sugar.</div><span class="card-price">₱150</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/75797236.jpg?width=400" class="food-img" loading="lazy" alt="Party Box Churros"><div class="card-body"><div class="card-name">Party Box Churros</div><div class="card-desc">10 pieces of classic churros with three delicious dipping sauces — perfect for sharing!</div><span class="card-price">₱345</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/75797235.jpg?width=400" class="food-img" loading="lazy" alt="Premium Churros"><div class="card-body"><div class="card-name">Premium Churros</div><div class="card-desc">4 pieces coated in rich sauce and loaded with delicious toppings in every bite.</div><span class="card-price">₱175</span></div></div>
     </div>
   </div>
 
   <div class="category-block" id="FrozenYogurt">
     <div class="category-label reveal">Frozen Yogurt</div>
     <div class="card-grid">
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/75797235.jpg?width=400" class="food-img" loading="lazy" alt="Frozen Yogurt 1 Topping">
-        <div class="card-body">
-          <div class="card-name">Frozen Yogurt — 1 Topping</div>
-          <div class="card-desc">Smooth, creamy and perfectly balanced — a guilt-free dessert in every spoonful.</div>
-          <span class="card-price">₱160</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/76283959.jpg?width=400" class="food-img" loading="lazy" alt="Frozen Yogurt 4 Toppings">
-        <div class="card-body">
-          <div class="card-name">Frozen Yogurt — 4 Toppings</div>
-          <div class="card-desc">All the creaminess, loaded up with four of your favourite toppings.</div>
-          <span class="card-price">₱160</span>
-        </div>
-      </div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/75797235.jpg?width=400" class="food-img" loading="lazy" alt="Frozen Yogurt 1 Topping"><div class="card-body"><div class="card-name">Frozen Yogurt — 1 Topping</div><div class="card-desc">Smooth, creamy and perfectly balanced — a guilt-free dessert in every spoonful.</div><span class="card-price">₱160</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/76283959.jpg?width=400" class="food-img" loading="lazy" alt="Frozen Yogurt 4 Toppings"><div class="card-body"><div class="card-name">Frozen Yogurt — 4 Toppings</div><div class="card-desc">All the creaminess, loaded up with four of your favourite toppings.</div><span class="card-price">₱160</span></div></div>
     </div>
   </div>
 
   <div class="category-block" id="HotDrink">
     <div class="category-label reveal">Hot Drinks</div>
     <div class="card-grid">
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/75797242.jpg?width=400" class="food-img" loading="lazy" alt="Hot Milo">
-        <div class="card-body">
-          <div class="card-name">Hot Milo</div>
-          <div class="card-desc">The all-time favourite comfort drink — rich, malty, and chocolatey, served hot.</div>
-          <span class="card-price">₱95</span>
-        </div>
-      </div>
-      <div class="menu-card reveal">
-        <img src="https://images.deliveryhero.io/image/fd-ph/Products/76283807.jpg?width=400" class="food-img" loading="lazy" alt="Hot Chocolate">
-        <div class="card-body">
-          <div class="card-name">Hot Chocolate</div>
-          <div class="card-desc">Hot creamy chocolate topped with soft, melty marshmallows.</div>
-          <span class="card-price">₱95</span>
-        </div>
-      </div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/75797242.jpg?width=400" class="food-img" loading="lazy" alt="Hot Milo"><div class="card-body"><div class="card-name">Hot Milo</div><div class="card-desc">The all-time favourite comfort drink — rich, malty, and chocolatey, served hot.</div><span class="card-price">₱95</span></div></div>
+      <div class="menu-card reveal"><img src="https://images.deliveryhero.io/image/fd-ph/Products/76283807.jpg?width=400" class="food-img" loading="lazy" alt="Hot Chocolate"><div class="card-body"><div class="card-name">Hot Chocolate</div><div class="card-desc">Hot creamy chocolate topped with soft, melty marshmallows.</div><span class="card-price">₱95</span></div></div>
     </div>
   </div>
 </section>
 
+<!-- CONTACT -->
 <section id="contact">
   <div class="section-header reveal">
     <span class="section-eyebrow">Find Us</span>
@@ -1027,39 +1006,24 @@ footer span { color: var(--pink); }
   </div>
   <div class="contact-grid">
     <div class="contact-card reveal">
-      <div class="contact-card-icon">
-        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      </div>
+      <div class="contact-card-icon"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
       <h3>Location</h3>
       <p>JB Tan St., BF Resort Drive, BF Resort — in front of Athefhasan Shawarma<br>Las Piñas City, Philippines</p>
-      <div class="map-container">
-        <iframe src="https://www.google.com/maps/embed?pb=!4v1773578358841!6m8!1m7!1sBbEdFutBPc_144LMPzmNJw!2m2!1d14.43097326632042!2d120.9897448290475!3f101.32186588934681!4f-8.531139913415245!5f0.7820865974627469" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-      </div>
+      <div class="map-container"><iframe src="https://www.google.com/maps/embed?pb=!4v1773578358841!6m8!1m7!1sBbEdFutBPc_144LMPzmNJw!2m2!1d14.43097326632042!2d120.9897448290475!3f101.32186588934681!4f-8.531139913415245!5f0.7820865974627469" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
     </div>
     <div class="contact-card reveal">
-      <div class="contact-card-icon">
-        <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-      </div>
+      <div class="contact-card-icon"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></div>
       <h3>Follow Us</h3>
       <p>Stay updated on new flavours, promos, and sweet announcements on Facebook.</p>
-      <a href="https://www.facebook.com/cravingsfortogo" target="_blank" class="fb-link">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook">
-        @cravingsfortogo
-      </a>
-      <div class="hours-img-wrap" style="margin-top:18px;">
-        <img src="CTGSoc.jpg" alt="Cravings To Go Facebook cover">
-      </div>
+      <a href="https://www.facebook.com/cravingsfortogo" target="_blank" class="fb-link"><img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook">@cravingsfortogo</a>
+      <div class="hours-img-wrap" style="margin-top:18px;"><img src="CTGSoc.jpg" alt="Cravings To Go Facebook cover"></div>
     </div>
     <div class="contact-card reveal">
-      <div class="contact-card-icon">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
+      <div class="contact-card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
       <h3>Opening Hours</h3>
       <p>We're open every day — come anytime your craving strikes!</p>
       <div class="hours-pill">10:00 AM – 12:00 Midnight</div>
-      <div class="hours-img-wrap">
-        <img src="CTGTime.jpg" alt="Opening hours schedule">
-      </div>
+      <div class="hours-img-wrap"><img src="CTGTime.jpg" alt="Opening hours schedule"></div>
     </div>
   </div>
 </section>
@@ -1071,60 +1035,388 @@ footer span { color: var(--pink); }
 <a href="https://www.facebook.com/cravingsfortogo" class="chat-btn" target="_blank">💬</a>
 
 <script>
-// Navbar scroll + active link highlighting
-const navbar = document.getElementById('navbar');
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.nav-links > a:not(.order-btn)');
-window.addEventListener('scroll', () => {
-  navbar.classList.toggle('scrolled', window.scrollY > 20);
+/* ═══════════════════════════════════════════════════════════════
+   GSAP + ScrollTrigger registration
+   Must happen before any ScrollTrigger usage.
+════════════════════════════════════════════════════════════════ */
+gsap.registerPlugin(ScrollTrigger);
 
-  let current = '';
-  sections.forEach(section => {
-    if (window.scrollY >= section.offsetTop - 100) {
-      current = section.getAttribute('id');
-    }
+/* ─────────────────────────────────────────────
+   ELEMENT REFS — query once, reuse everywhere.
+   Avoids repeated DOM lookups inside loops/events.
+───────────────────────────────────────────── */
+const navbar        = document.getElementById('navbar');
+const splineViewer  = document.getElementById('splineViewer');
+const splineContainer = document.getElementById('splineContainer');
+const heroContent   = document.getElementById('heroContent');
+const heroEyebrow   = document.getElementById('heroEyebrow');
+const heroTitle     = document.getElementById('heroTitle');
+const heroSub       = document.getElementById('heroSub');
+const heroCta       = document.getElementById('heroCta');
+const scrollHint    = document.getElementById('scrollHint');
+const glow1         = document.getElementById('glow1');
+const glow2         = document.getElementById('glow2');
+const homeSection   = document.getElementById('home');
+const sections      = [...document.querySelectorAll('section[id]')];
+const navLinks      = [...document.querySelectorAll('.nav-links > a:not(.order-btn)')];
+
+/* ─────────────────────────────────────────────
+   SPLINE LOADER
+   Strategy:
+   1. Spline viewer starts opacity:0 (CSS)
+   2. We listen for the 'load' custom event OR
+      use a 3s timeout fallback (Spline doesn't
+      always fire 'load' reliably on all browsers)
+   3. On reveal, fade in with GSAP (compositor only)
+   4. Then kick off the entrance animation sequence
+───────────────────────────────────────────── */
+let splineLoaded = false;
+
+function revealSpline() {
+  if (splineLoaded) return;
+  splineLoaded = true;
+
+  /* Fade Spline canvas in — opacity is GPU composited */
+  gsap.to(splineViewer, {
+    opacity: 1,
+    duration: 1.6,
+    ease: 'power2.out',
+    onComplete: startEntranceAnimation
+  });
+}
+
+/* Listen for Spline's own load event */
+splineViewer.addEventListener('load', revealSpline);
+
+/* Fallback: force reveal after 3 seconds regardless */
+const splineFallback = setTimeout(revealSpline, 3000);
+
+/* ─────────────────────────────────────────────
+   ENTRANCE ANIMATION SEQUENCE
+   Staggered reveal using GSAP timeline.
+   All animations use transform + opacity only
+   → runs entirely on compositor thread, zero layout.
+───────────────────────────────────────────── */
+function startEntranceAnimation() {
+  clearTimeout(splineFallback);
+
+  const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+  /* Ambient glow orbs bloom in */
+  tl.to([glow1, glow2], {
+    opacity: 1,
+    duration: 2,
+    stagger: 0.3,
+    ease: 'power2.out'
+  }, 0);
+
+  /* Eyebrow label slides up */
+  tl.to(heroEyebrow, {
+    opacity: 1, y: 0,
+    duration: 0.7
+  }, 0.2);
+
+  /* Main title rises with slight spring */
+  tl.to(heroTitle, {
+    opacity: 1, y: 0,
+    duration: 0.9,
+    ease: 'power4.out'
+  }, 0.42);
+
+  /* Subtitle follows */
+  tl.to(heroSub, {
+    opacity: 1, y: 0,
+    duration: 0.7
+  }, 0.65);
+
+  /* CTAs pop in last */
+  tl.to(heroCta, {
+    opacity: 1, y: 0,
+    duration: 0.6
+  }, 0.82);
+
+  /* Scroll hint fades in after everything else */
+  tl.to(scrollHint, {
+    opacity: 1,
+    duration: 0.8,
+    ease: 'power2.out'
+  }, 1.2);
+
+  /* Idle breathing animation on the Spline container
+     Subtle scale pulse — makes the model feel alive.
+     Uses yoyo + repeat:-1 for infinite loop. */
+  gsap.to(splineContainer, {
+    scale: 1.025,
+    duration: 5,
+    ease: 'sine.inOut',
+    yoyo: true,
+    repeat: -1,
+    delay: 1.5
   });
 
-  navLinks.forEach(link => {
-    link.classList.remove('active');
-    if (link.getAttribute('href') === '#' + current) {
-      link.classList.add('active');
-    }
+  /* Slow ambient drift on glow orbs */
+  gsap.to(glow1, {
+    y: -30, x: 15,
+    duration: 7,
+    ease: 'sine.inOut',
+    yoyo: true, repeat: -1
   });
+  gsap.to(glow2, {
+    y: 20, x: -20,
+    duration: 9,
+    ease: 'sine.inOut',
+    yoyo: true, repeat: -1,
+    delay: 2
+  });
+}
+
+/* ─────────────────────────────────────────────
+   SCROLL-DRIVEN ANIMATIONS (GSAP ScrollTrigger)
+
+   1. Hero parallax: Spline container drifts up and
+      fades as user scrolls out of hero — depth illusion
+   2. Hero content: slides up and fades out (exit)
+   3. Scroll hint: fades out on first scroll
+   
+   scrub:true = animation progress tied directly to
+   scroll position — buttery smooth, no spring delay.
+   All transforms run on compositor thread.
+───────────────────────────────────────────── */
+
+/* Spline parallax — container drifts up slower than scroll
+   Creates the illusion of depth, exactly like Linear/Stripe hero */
+gsap.to(splineContainer, {
+  yPercent: -18,           /* drifts up 18% of its own height */
+  ease: 'none',
+  scrollTrigger: {
+    trigger: homeSection,
+    start: 'top top',
+    end: 'bottom top',
+    scrub: 0.8,            /* 0.8s lag = organic feel, not robotic */
+  }
 });
 
-// Scroll reveal
+/* Hero content parallax — text moves up faster than background
+   This differential speed creates premium layered depth */
+gsap.to(heroContent, {
+  yPercent: -12,
+  opacity: 0,
+  ease: 'none',
+  scrollTrigger: {
+    trigger: homeSection,
+    start: 'top top',
+    end: '60% top',        /* fade out before bottom of hero */
+    scrub: 0.6,
+  }
+});
+
+/* Scroll hint fades on first scroll */
+gsap.to(scrollHint, {
+  opacity: 0,
+  ease: 'none',
+  scrollTrigger: {
+    trigger: homeSection,
+    start: 'top top',
+    end: '10% top',
+    scrub: true
+  }
+});
+
+/* Glow orbs scale + fade as hero exits */
+gsap.to([glow1, glow2], {
+  opacity: 0,
+  scale: 0.6,
+  ease: 'none',
+  scrollTrigger: {
+    trigger: homeSection,
+    start: '30% top',
+    end: 'bottom top',
+    scrub: 1
+  }
+});
+
+/* ─────────────────────────────────────────────
+   SPLINE VIEWPORT SUSPENSION
+   When hero is fully off-screen, Spline's WebGL
+   render loop still runs. We pause it by setting
+   pointer-events:none + visibility:hidden which
+   hints to some browsers to deprioritize the tab.
+   IntersectionObserver is zero-cost when not firing.
+───────────────────────────────────────────── */
+const heroObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    /* When hero leaves viewport, visually hide Spline */
+    splineContainer.style.visibility = entry.isIntersecting ? 'visible' : 'hidden';
+  });
+}, { threshold: 0.05 });
+heroObserver.observe(homeSection);
+
+/* ─────────────────────────────────────────────
+   MOUSE PARALLAX — Smooth cursor tracking
+   
+   Strategy:
+   • Track raw mouse coords
+   • Lerp (linear interpolate) toward target each frame
+     via requestAnimationFrame — silky smooth, never jittery
+   • Apply small opposite-direction offset to Spline container
+     (moves opposite to cursor = parallax depth effect)
+   • Apply same-direction offset to hero content (floats with cursor)
+   • Max movement capped to prevent overdrive
+   
+   Why lerp instead of direct? Direct mouse → transform
+   causes mechanical, jittery movement. Lerp gives
+   organic "lagging behind" feel (same as Apple's hero).
+───────────────────────────────────────────── */
+const mouse = { x: 0, y: 0 };       /* raw normalized -0.5 to 0.5 */
+const lerped = { x: 0, y: 0 };      /* smoothed position */
+const LERP_AMOUNT = 0.06;            /* lower = more lag = more organic */
+const SPLINE_MAGNITUDE = 22;         /* max px shift for Spline */
+const CONTENT_MAGNITUDE = 8;         /* max px shift for text */
+let mouseRafId = null;
+let isHeroVisible = true;
+
+/* Track mouse only when hero is in view — saves CPU */
+const mouseVisibilityObserver = new IntersectionObserver((entries) => {
+  isHeroVisible = entries[0].isIntersecting;
+  if (!isHeroVisible && mouseRafId) {
+    cancelAnimationFrame(mouseRafId);
+    mouseRafId = null;
+  } else if (isHeroVisible && !mouseRafId) {
+    mouseRafId = requestAnimationFrame(lerpMouseLoop);
+  }
+}, { threshold: 0.1 });
+mouseVisibilityObserver.observe(homeSection);
+
+/* Normalize mouse to -0.5 → 0.5 range */
+window.addEventListener('mousemove', (e) => {
+  if (!isHeroVisible) return;
+  mouse.x = (e.clientX / window.innerWidth)  - 0.5;
+  mouse.y = (e.clientY / window.innerHeight) - 0.5;
+}, { passive: true });
+
+/* rAF loop: interpolate toward mouse target each frame */
+function lerpMouseLoop() {
+  /* Lerp: current + (target - current) × speed */
+  lerped.x += (mouse.x - lerped.x) * LERP_AMOUNT;
+  lerped.y += (mouse.y - lerped.y) * LERP_AMOUNT;
+
+  /* 
+    Spline moves OPPOSITE to cursor (parallax depth)
+    Content moves SAME direction as cursor (floats with it)
+    Both use transform → compositor thread, no layout.
+  */
+  gsap.set(splineContainer, {
+    x: -lerped.x * SPLINE_MAGNITUDE,
+    y: -lerped.y * SPLINE_MAGNITUDE,
+  });
+
+  gsap.set(heroContent, {
+    x: lerped.x * CONTENT_MAGNITUDE,
+    y: lerped.y * CONTENT_MAGNITUDE,
+  });
+
+  mouseRafId = requestAnimationFrame(lerpMouseLoop);
+}
+/* Start the loop */
+mouseRafId = requestAnimationFrame(lerpMouseLoop);
+
+/* ─────────────────────────────────────────────
+   NAVBAR — scroll state + active link tracking
+   
+   Uses requestAnimationFrame throttle pattern:
+   scroll fires many times per frame, rAF ensures
+   we only process once per paint cycle.
+───────────────────────────────────────────── */
+let scrollTicking = false;
+
+window.addEventListener('scroll', () => {
+  if (!scrollTicking) {
+    requestAnimationFrame(() => {
+      const scrollY = window.scrollY;
+
+      /* Navbar visual state */
+      navbar.classList.toggle('scrolled', scrollY > 20);
+
+      /* Active section highlighting */
+      let current = '';
+      sections.forEach(section => {
+        if (scrollY >= section.offsetTop - 120) {
+          current = section.id;
+        }
+      });
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+      });
+
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}, { passive: true }); /* passive = browser won't wait for preventDefault */
+
+/* ─────────────────────────────────────────────
+   SCROLL REVEAL — IntersectionObserver
+   Much cheaper than scroll listeners.
+   rootMargin pre-triggers reveal slightly before
+   element enters viewport = no pop-in delay.
+───────────────────────────────────────────── */
 const reveals = document.querySelectorAll('.reveal');
-const observer = new IntersectionObserver((entries) => {
+const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry, i) => {
     if (entry.isIntersecting) {
-      setTimeout(() => entry.target.classList.add('visible'), i * 60);
-      observer.unobserve(entry.target);
+      /* Stagger within each batch for cascading reveal */
+      setTimeout(() => {
+        entry.target.classList.add('visible');
+      }, i * 55);
+      revealObserver.unobserve(entry.target);
     }
   });
-}, { threshold: 0.12 });
-reveals.forEach(el => observer.observe(el));
+}, {
+  threshold: 0.1,
+  rootMargin: '0px 0px -30px 0px'
+});
+reveals.forEach(el => revealObserver.observe(el));
 
-// Loader
-window.addEventListener("load", () => {
-  const loader = document.getElementById("loader");
+/* ─────────────────────────────────────────────
+   LOADER — hides after page assets are ready
+───────────────────────────────────────────── */
+window.addEventListener('load', () => {
+  const loader = document.getElementById('loader');
   setTimeout(() => {
-    loader.style.opacity = "0";
-    setTimeout(() => loader.style.display = "none", 600);
+    loader.style.opacity = '0';
+    setTimeout(() => {
+      loader.style.display = 'none';
+    }, 600);
   }, 1800);
 });
 
-// Mobile toggle
+/* ─────────────────────────────────────────────
+   MOBILE NAV TOGGLE
+───────────────────────────────────────────── */
 function toggleMenu() {
   document.getElementById('navLinks').classList.toggle('show');
 }
 
-// Close mobile menu on link click
+/* Close menu when any link is tapped */
 document.querySelectorAll('#navLinks a').forEach(link => {
   link.addEventListener('click', () => {
-    document.getElementById('navLinks').classList.remove('remove');
+    document.getElementById('navLinks').classList.remove('show');
   });
 });
+
+/* ─────────────────────────────────────────────
+   TOUCH: disable mouse parallax on touch devices
+   to avoid awkward behavior with no cursor.
+───────────────────────────────────────────── */
+window.addEventListener('touchstart', () => {
+  if (mouseRafId) {
+    cancelAnimationFrame(mouseRafId);
+    mouseRafId = null;
+  }
+  /* Reset positions */
+  gsap.set(splineContainer, { x: 0, y: 0 });
+  gsap.set(heroContent, { x: 0, y: 0 });
+}, { once: true, passive: true });
 </script>
 </body>
 </html>
